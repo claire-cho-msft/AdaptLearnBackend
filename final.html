@@ -1,0 +1,1233 @@
+<h1>Tutorial: Explore Azure OpenAI in Azure AI Foundry Models embeddings and document search<h1>
+        <h2>In this article<h2>
+                <h2>Prerequisites<h2>
+                        <ul>
+                            <li>An Azure subscription - <a data-linktype="external"
+                                    href="https://azure.microsoft.com/free/cognitive-services?azure-portal=true">Create
+                                    one for free</a></li>
+                            <li>An Azure OpenAI resource with the <strong>text-embedding-ada-002 (Version 2)</strong>
+                                model deployed. This model is currently only available in <a
+                                    data-linktype="relative-path"
+                                    href="../concepts/models#model-summary-table-and-region-availability">certain
+                                    regions</a>. If you don't have a resource the process of creating one is documented
+                                in our <a data-linktype="relative-path" href="../how-to/create-resource">resource
+                                    deployment guide</a>.</li>
+                            <li><a data-linktype="external" href="https://www.python.org/" target="_blank">Python 3.8 or
+                                    later version</a></li>
+                            <li>The following Python libraries: openai, num2words, matplotlib, plotly, scipy,
+                                scikit-learn, pandas, tiktoken.</li>
+                            <li><a data-linktype="external" href="https://jupyter.org/">Jupyter Notebooks</a></li>
+                        </ul>
+                        <h2>Set up<h2>
+                                <h3 id="python-libraries">Python libraries</h3>
+                                <p>If you haven't already, you need to install the following libraries:</p>
+                                <div class="tabGroup" id="tabgroup_1">
+                                    <ul role="tablist">
+                                        <li role="presentation">
+                                            <a aria-controls="tabpanel_1_python-new" aria-selected="true"
+                                                data-linktype="self-bookmark" data-tab="python-new"
+                                                href="#tabpanel_1_python-new" role="tab" tabindex="0">OpenAI Python
+                                                1.x</a>
+                                        </li>
+                                        <li role="presentation">
+                                            <a aria-controls="tabpanel_1_python" data-linktype="self-bookmark"
+                                                data-tab="python" href="#tabpanel_1_python" role="tab"
+                                                tabindex="-1">OpenAI Python 0.28.1</a>
+                                        </li>
+                                    </ul>
+                                    <section data-tab="python-new" id="tabpanel_1_python-new" role="tabpanel">
+                                        <pre><code class="lang-console">pip install openai num2words matplotlib plotly scipy scikit-learn pandas tiktoken
+</code></pre>
+                                    </section>
+                                    <section aria-hidden="true" data-tab="python" hidden="hidden" id="tabpanel_1_python"
+                                        role="tabpanel">
+                                        <div class="NOTE">
+                                            <p>Note</p>
+                                            <p>The OpenAI Python library version <code>0.28.1</code> is deprecated. We
+                                                recommend using <code>1.x</code>. Consult our <a
+                                                    data-linktype="relative-path" href="../how-to/migration">migration
+                                                    guide</a> for information on moving from <code>0.28.1</code> to
+                                                <code>1.x</code>.</p>
+                                        </div>
+                                        <pre><code class="lang-cmd">pip install "openai==0.28.1" num2words matplotlib plotly scipy scikit-learn pandas tiktoken
+</code></pre>
+                                    </section>
+                                </div>
+                                Alternatively, you can use our [requirements.txt
+                                file](https://github.com/Azure-Samples/Azure-OpenAI-Docs-Samples/blob/main/Samples/Tutorials/Embeddings/requirements.txt).
+                                <h3 id="download-the-billsum-dataset">Download the BillSum dataset</h3>
+                                <p>BillSum is a dataset of United States Congressional and California state bills. For
+                                    illustration purposes, we'll look only at the US bills. The corpus consists of bills
+                                    from the 103rd-115th (1993-2018) sessions of Congress. The data was split into
+                                    18,949 train bills and 3,269 test bills. The BillSum corpus focuses on mid-length
+                                    legislation from 5,000 to 20,000 characters in length. More information on the
+                                    project and the original academic paper where this dataset is derived from can be
+                                    found on the <a data-linktype="external"
+                                        href="https://github.com/FiscalNote/BillSum">BillSum project's GitHub
+                                        repository</a></p>
+                                <p>This tutorial uses the <code>bill_sum_data.csv</code> file that can be downloaded
+                                    from our <a data-linktype="external"
+                                        href="https://github.com/Azure-Samples/Azure-OpenAI-Docs-Samples/blob/main/Samples/Tutorials/Embeddings/data/bill_sum_data.csv">GitHub
+                                        sample data</a>.</p>
+                                <p>You can also download the sample data by running the following command on your local
+                                    machine:</p>
+                                <pre><code class="lang-cmd">curl "https://raw.githubusercontent.com/Azure-Samples/Azure-OpenAI-Docs-Samples/main/Samples/Tutorials/Embeddings/data/bill_sum_data.csv" --output bill_sum_data.csv
+</code></pre>
+                                <h3 id="retrieve-key-and-endpoint">Retrieve key and endpoint</h3>
+                                <p>To successfully make a call against Azure OpenAI, you need an
+                                    <strong>endpoint</strong> and a <strong>key</strong>.</p>
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Variable name</th>
+                                            <th>Value</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td><code>ENDPOINT</code></td>
+                                            <td>The service endpoint can be found in the <strong>Keys &amp;
+                                                    Endpoint</strong> section when examining your resource from the
+                                                Azure portal. Alternatively, you can find the endpoint via the
+                                                <strong>Deployments</strong> page in Azure AI Foundry portal. An example
+                                                endpoint is: <code>https://docs-test-001.openai.azure.com/</code>.</td>
+                                        </tr>
+                                        <tr>
+                                            <td><code>API-KEY</code></td>
+                                            <td>This value can be found in the <strong>Keys &amp; Endpoint</strong>
+                                                section when examining your resource from the Azure portal. You can use
+                                                either <code>KEY1</code> or <code>KEY2</code>.</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                                <p>Go to your resource in the Azure portal. The <strong>Keys &amp; Endpoint</strong>
+                                    section can be found in the <strong>Resource Management</strong> section. Copy your
+                                    endpoint and access key as you'll need both for authenticating your API calls. You
+                                    can use either <code>KEY1</code> or <code>KEY2</code>. Always having two keys allows
+                                    you to securely rotate and regenerate keys without causing a service disruption.</p>
+                                <p><span class="mx-imgBorder">
+                                        <a data-linktype="relative-path"
+                                            href="https://learn.microsoft.com/en-us/azure/ai-services/openai/media/quickstarts/endpoint.png#lightbox">
+                                            <img alt="Screenshot of the overview UI for an Azure OpenAI resource in the Azure portal with the endpoint and access keys location circled in red."
+                                                data-linktype="relative-path" src="https://learn.microsoft.com/en-us/azure/ai-services/openai/media/quickstarts/endpoint.png" />
+                                        </a>
+                                    </span>
+                                </p>
+                                <h3 id="environment-variables">Environment variables</h3>
+                                <p>Create and assign persistent environment variables for your key and endpoint.</p>
+                                <div class="IMPORTANT">
+                                    <p>Important</p>
+                                    <p>Use API keys with caution. Don't include the API key directly in your code, and
+                                        never post it publicly. If you use an API key, store it securely in Azure Key
+                                        Vault. For more information about using API keys securely in your apps, see <a
+                                            data-linktype="absolute-path"
+                                            href="/en-us/azure/key-vault/general/apps-api-keys-secrets">API keys with
+                                            Azure Key Vault</a>.</p>
+                                    <p>For more information about AI services security, see <a
+                                            data-linktype="absolute-path"
+                                            href="/en-us/azure/ai-services/authentication">Authenticate requests to
+                                            Azure AI services</a>.</p>
+                                </div>
+                                <div class="tabGroup" id="tabgroup_2">
+                                    <ul role="tablist">
+                                        <li role="presentation">
+                                            <a aria-controls="tabpanel_2_command-line" aria-selected="true"
+                                                data-linktype="self-bookmark" data-tab="command-line"
+                                                href="#tabpanel_2_command-line" role="tab" tabindex="0">Command Line</a>
+                                        </li>
+                                        <li role="presentation">
+                                            <a aria-controls="tabpanel_2_powershell" data-linktype="self-bookmark"
+                                                data-tab="powershell" href="#tabpanel_2_powershell" role="tab"
+                                                tabindex="-1">PowerShell</a>
+                                        </li>
+                                        <li role="presentation">
+                                            <a aria-controls="tabpanel_2_bash" data-linktype="self-bookmark"
+                                                data-tab="bash" href="#tabpanel_2_bash" role="tab"
+                                                tabindex="-1">Bash</a>
+                                        </li>
+                                    </ul>
+                                    <section data-tab="command-line" id="tabpanel_2_command-line" role="tabpanel">
+                                        <pre><code class="lang-CMD">setx AZURE_OPENAI_API_KEY "REPLACE_WITH_YOUR_KEY_VALUE_HERE" 
+</code></pre>
+                                        <pre><code class="lang-CMD">setx AZURE_OPENAI_ENDPOINT "REPLACE_WITH_YOUR_ENDPOINT_HERE" 
+</code></pre>
+                                    </section>
+                                    <section aria-hidden="true" data-tab="powershell" hidden="hidden"
+                                        id="tabpanel_2_powershell" role="tabpanel">
+                                        <pre><code class="lang-powershell">[System.Environment]::SetEnvironmentVariable('AZURE_OPENAI_API_KEY', 'REPLACE_WITH_YOUR_KEY_VALUE_HERE', 'User')
+</code></pre>
+                                        <pre><code class="lang-powershell">[System.Environment]::SetEnvironmentVariable('AZURE_OPENAI_ENDPOINT', 'REPLACE_WITH_YOUR_ENDPOINT_HERE', 'User')
+</code></pre>
+                                    </section>
+                                    <section aria-hidden="true" data-tab="bash" hidden="hidden" id="tabpanel_2_bash"
+                                        role="tabpanel">
+                                        <pre><code class="lang-Bash">echo export AZURE_OPENAI_API_KEY="REPLACE_WITH_YOUR_KEY_VALUE_HERE" &gt;&gt; /etc/environment
+echo export AZURE_OPENAI_ENDPOINT="REPLACE_WITH_YOUR_ENDPOINT_HERE" &gt;&gt; /etc/environment
+
+source /etc/environment
+</code></pre>
+                                    </section>
+                                </div>
+                                <p>After setting the environment variables, you might need to close and reopen Jupyter
+                                    notebooks or whatever IDE you're using in order for the environment variables to be
+                                    accessible. While we strongly recommend using Jupyter Notebooks, if for some reason
+                                    you can't you'll need to modify any code that is returning a pandas dataframe by
+                                    using <code>print(dataframe_name)</code> rather than just calling the
+                                    <code>dataframe_name</code> directly as is often done at the end of a code block.
+                                </p>
+                                <p>Run the following code in your preferred Python IDE:</p>
+                                If you wish to view the Jupyter notebook that corresponds to this tutorial you can
+                                download the tutorial from our [samples
+                                repo](https://github.com/Azure-Samples/Azure-OpenAI-Docs-Samples/blob/main/Samples/Tutorials/Embeddings/embedding_billsum.ipynb).
+                                <h2>Import libraries<h2>
+                                        <div class="tabGroup" id="tabgroup_3">
+                                            <ul role="tablist">
+                                                <li role="presentation">
+                                                    <a aria-controls="tabpanel_3_python-new" aria-selected="true"
+                                                        data-linktype="self-bookmark" data-tab="python-new"
+                                                        href="#tabpanel_3_python-new" role="tab" tabindex="0">OpenAI
+                                                        Python 1.x</a>
+                                                </li>
+                                                <li role="presentation">
+                                                    <a aria-controls="tabpanel_3_python" data-linktype="self-bookmark"
+                                                        data-tab="python" href="#tabpanel_3_python" role="tab"
+                                                        tabindex="-1">OpenAI Python 0.28.1</a>
+                                                </li>
+                                            </ul>
+                                            <section data-tab="python-new" id="tabpanel_3_python-new" role="tabpanel">
+                                                <pre><code class="lang-python">import os
+import re
+import requests
+import sys
+from num2words import num2words
+import os
+import pandas as pd
+import numpy as np
+import tiktoken
+from openai import AzureOpenAI
+</code></pre>
+                                            </section>
+                                            <section aria-hidden="true" data-tab="python" hidden="hidden"
+                                                id="tabpanel_3_python" role="tabpanel">
+                                                <pre><code class="lang-python">import openai
+import os
+import re
+import requests
+import sys
+from num2words import num2words
+import os
+import pandas as pd
+import numpy as np
+from openai.embeddings_utils import get_embedding, cosine_similarity
+import tiktoken
+
+API_KEY = os.getenv("AZURE_OPENAI_API_KEY") 
+RESOURCE_ENDPOINT = os.getenv("AZURE_OPENAI_ENDPOINT") 
+
+openai.api_type = "azure"
+openai.api_key = API_KEY
+openai.api_base = RESOURCE_ENDPOINT
+openai.api_version = "2024-10-21"
+
+url = openai.api_base + "/openai/deployments?api-version=2024-10-21" 
+
+r = requests.get(url, headers={"api-key": API_KEY})
+
+print(r.text)
+</code></pre>
+                                                <pre><code class="lang-output">{
+  "data": [
+    {
+      "scale_settings": {
+        "scale_type": "standard"
+      },
+      "model": "text-embedding-ada-002",
+      "owner": "organization-owner",
+      "id": "text-embedding-ada-002",
+      "status": "succeeded",
+      "created_at": 1657572678,
+      "updated_at": 1657572678,
+      "object": "deployment"
+    },
+    {
+      "scale_settings": {
+        "scale_type": "standard"
+      },
+      "model": "code-cushman-001",
+      "owner": "organization-owner",
+      "id": "code-cushman-001",
+      "status": "succeeded",
+      "created_at": 1657572712,
+      "updated_at": 1657572712,
+      "object": "deployment"
+    },
+    {
+      "scale_settings": {
+        "scale_type": "standard"
+      },
+      "model": "text-search-curie-doc-001",
+      "owner": "organization-owner",
+      "id": "text-search-curie-doc-001",
+      "status": "succeeded",
+      "created_at": 1668620345,
+      "updated_at": 1668620345,
+      "object": "deployment"
+    },
+    {
+      "scale_settings": {
+        "scale_type": "standard"
+      },
+      "model": "text-search-curie-query-001",
+      "owner": "organization-owner",
+      "id": "text-search-curie-query-001",
+      "status": "succeeded",
+      "created_at": 1669048765,
+      "updated_at": 1669048765,
+      "object": "deployment"
+    }
+  ],
+  "object": "list"
+}
+</code></pre>
+                                                <p>The output of this command will vary based on the number and type of
+                                                    models you've deployed. In this case, we need to confirm that we
+                                                    have an entry for <strong>text-embedding-ada-002</strong>. If you
+                                                    find that you're missing this model, you'll need to <a
+                                                        data-linktype="relative-path"
+                                                        href="../how-to/create-resource#deploy-a-model">deploy the
+                                                        model</a> to your resource before proceeding.</p>
+                                            </section>
+                                        </div>
+                                        <p>Now we need to read our csv file and create a pandas DataFrame. After the
+                                            initial DataFrame is created, we can view the contents of the table by
+                                            running <code>df</code>.</p>
+                                        <pre><code class="lang-python">df=pd.read_csv(os.path.join(os.getcwd(),'bill_sum_data.csv')) # This assumes that you have placed the bill_sum_data.csv in the same directory you are running Jupyter Notebooks
+df
+</code></pre>
+                                        <p><strong>Output:</strong></p>
+                                        <p><span class="mx-imgBorder">
+                                                <a data-linktype="relative-path"
+                                                    href="../media/tutorials/initial-dataframe.png#lightbox">
+                                                    <img alt="Screenshot of the initial DataFrame table results from the csv file."
+                                                        data-linktype="relative-path"
+                                                        src="../media/tutorials/initial-dataframe.png" />
+                                                </a>
+                                            </span>
+                                        </p>
+                                        <p>The initial table has more columns than we need we'll create a new smaller
+                                            DataFrame called <code>df_bills</code> which will contain only the columns
+                                            for <code>text</code>, <code>summary</code>, and <code>title</code>.</p>
+                                        <pre><code class="lang-python">df_bills = df[['text', 'summary', 'title']]
+df_bills
+</code></pre>
+                                        <p><strong>Output:</strong></p>
+                                        <p><span class="mx-imgBorder">
+                                                <a data-linktype="relative-path"
+                                                    href="../media/tutorials/cleanup-dataframe.png#lightbox">
+                                                    <img alt="Screenshot of the smaller DataFrame table results with only text, summary and title columns displayed."
+                                                        data-linktype="relative-path"
+                                                        src="../media/tutorials/cleanup-dataframe.png" />
+                                                </a>
+                                            </span>
+                                        </p>
+                                        <p>Next we'll perform some light data cleaning by removing redundant whitespace
+                                            and cleaning up the punctuation to prepare the data for tokenization.</p>
+                                        <pre><code class="lang-python">pd.options.mode.chained_assignment = None #https://pandas.pydata.org/pandas-docs/stable/user_guide/indexing.html#evaluation-order-matters
+
+# s is input text
+def normalize_text(s, sep_token = " \n "):
+    s = re.sub(r'\s+',  ' ', s).strip()
+    s = re.sub(r". ,","",s)
+    # remove all instances of multiple spaces
+    s = s.replace("..",".")
+    s = s.replace(". .",".")
+    s = s.replace("\n", "")
+    s = s.strip()
+    
+    return s
+
+df_bills['text']= df_bills["text"].apply(lambda x : normalize_text(x))
+</code></pre>
+                                        <p>Now we need to remove any bills that are too long for the token limit (8192
+                                            tokens).</p>
+                                        <pre><code class="lang-python">tokenizer = tiktoken.get_encoding("cl100k_base")
+df_bills['n_tokens'] = df_bills["text"].apply(lambda x: len(tokenizer.encode(x)))
+df_bills = df_bills[df_bills.n_tokens&lt;8192]
+len(df_bills)
+</code></pre>
+                                        <pre><code class="lang-output">20
+</code></pre>
+                                        <div class="NOTE">
+                                            <p>Note</p>
+                                            <p>In this case all bills are under the embedding model input token limit,
+                                                but you can use the technique above to remove entries that would
+                                                otherwise cause embedding to fail. When faced with content that exceeds
+                                                the embedding limit, you can also chunk the content into smaller pieces
+                                                and then embed those one at a time.</p>
+                                        </div>
+                                        <p>We'll once again examine <strong>df_bills</strong>.</p>
+                                        <pre><code class="lang-python">df_bills
+</code></pre>
+                                        <p><strong>Output:</strong></p>
+                                        <p><span class="mx-imgBorder">
+                                                <a data-linktype="relative-path"
+                                                    href="../media/tutorials/tokens-dataframe.png#lightbox">
+                                                    <img alt="Screenshot of the DataFrame with a new column called n_tokens."
+                                                        data-linktype="relative-path"
+                                                        src="../media/tutorials/tokens-dataframe.png" />
+                                                </a>
+                                            </span>
+                                        </p>
+                                        <p>To understand the n_tokens column a little more as well how text ultimately
+                                            is tokenized, it can be helpful to run the following code:</p>
+                                        <pre><code class="lang-python">sample_encode = tokenizer.encode(df_bills.text[0]) 
+decode = tokenizer.decode_tokens_bytes(sample_encode)
+decode
+</code></pre>
+                                        <p>For our docs we're intentionally truncating the output, but running this
+                                            command in your environment will return the full text from index zero
+                                            tokenized into chunks. You can see that in some cases an entire word is
+                                            represented with a single token whereas in others parts of words are split
+                                            across multiple tokens.</p>
+                                        <pre><code class="lang-output">[b'SECTION',
+ b' ',
+ b'1',
+ b'.',
+ b' SHORT',
+ b' TITLE',
+ b'.',
+ b' This',
+ b' Act',
+ b' may',
+ b' be',
+ b' cited',
+ b' as',
+ b' the',
+ b' ``',
+ b'National',
+ b' Science',
+ b' Education',
+ b' Tax',
+ b' In',
+ b'cent',
+ b'ive',
+ b' for',
+ b' Businesses',
+ b' Act',
+ b' of',
+ b' ',
+ b'200',
+ b'7',
+ b"''.",
+ b' SEC',
+ b'.',
+ b' ',
+ b'2',
+ b'.',
+ b' C',
+ b'RED',
+ b'ITS',
+ b' FOR',
+ b' CERT',
+ b'AIN',
+ b' CONTRIBUT',
+ b'IONS',
+ b' BEN',
+ b'EF',
+ b'IT',
+ b'ING',
+ b' SC',
+</code></pre>
+                                        <p>If you then check the length of the <code>decode</code> variable, you'll find
+                                            it matches the first number in the n_tokens column.</p>
+                                        <pre><code class="lang-python">len(decode)
+</code></pre>
+                                        <pre><code class="lang-output">1466
+</code></pre>
+                                        <p>Now that we understand more about how tokenization works we can move on to
+                                            embedding. It's important to note, that we haven't actually tokenized the
+                                            documents yet. The <code>n_tokens</code> column is simply a way of making
+                                            sure none of the data we pass to the model for tokenization and embedding
+                                            exceeds the input token limit of 8,192. When we pass the documents to the
+                                            embeddings model, it will break the documents into tokens similar (though
+                                            not necessarily identical) to the examples above and then convert the tokens
+                                            to a series of floating point numbers that will be accessible via vector
+                                            search. These embeddings can be stored locally or in an <a
+                                                data-linktype="absolute-path"
+                                                href="/en-us/azure/cosmos-db/mongodb/vcore/vector-search">Azure Database
+                                                to support Vector Search</a>. As a result, each bill will have its own
+                                            corresponding embedding vector in the new <code>ada_v2</code> column on the
+                                            right side of the DataFrame.</p>
+                                        <p>In the example below we're calling the embedding model once per every item
+                                            that we want to embed. When working with large embedding projects you can
+                                            alternatively pass the model an array of inputs to embed rather than one
+                                            input at a time. When you pass the model an array of inputs the max number
+                                            of input items per call to the embedding endpoint is 2048.</p>
+                                        <div class="tabGroup" id="tabgroup_4">
+                                            <ul role="tablist">
+                                                <li role="presentation">
+                                                    <a aria-controls="tabpanel_4_python-new" aria-selected="true"
+                                                        data-linktype="self-bookmark" data-tab="python-new"
+                                                        href="#tabpanel_4_python-new" role="tab" tabindex="0">OpenAI
+                                                        Python 1.x</a>
+                                                </li>
+                                                <li role="presentation">
+                                                    <a aria-controls="tabpanel_4_python" data-linktype="self-bookmark"
+                                                        data-tab="python" href="#tabpanel_4_python" role="tab"
+                                                        tabindex="-1">OpenAI Python 0.28.1</a>
+                                                </li>
+                                            </ul>
+                                            <section data-tab="python-new" id="tabpanel_4_python-new" role="tabpanel">
+                                                <pre><code class="lang-python">client = AzureOpenAI(
+  api_key = os.getenv("AZURE_OPENAI_API_KEY"),  
+  api_version = "2024-02-01",
+  azure_endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
+)
+
+def generate_embeddings(text, model="text-embedding-ada-002"): # model = "deployment_name"
+    return client.embeddings.create(input = [text], model=model).data[0].embedding
+
+df_bills['ada_v2'] = df_bills["text"].apply(lambda x : generate_embeddings (x, model = 'text-embedding-ada-002')) # model should be set to the deployment name you chose when you deployed the text-embedding-ada-002 (Version 2) model
+</code></pre>
+                                            </section>
+                                            <section aria-hidden="true" data-tab="python" hidden="hidden"
+                                                id="tabpanel_4_python" role="tabpanel">
+                                                <pre><code class="lang-python">df_bills['ada_v2'] = df_bills["text"].apply(lambda x : get_embedding(x, engine = 'text-embedding-ada-002')) # engine should be set to the deployment name you chose when you deployed the text-embedding-ada-002 (Version 2) model
+</code></pre>
+                                            </section>
+                                        </div>
+                                        <pre><code class="lang-python">df_bills
+</code></pre>
+                                        <p><strong>Output:</strong></p>
+                                        <p><span class="mx-imgBorder">
+                                                <a data-linktype="relative-path"
+                                                    href="../media/tutorials/embed-text-documents.png#lightbox">
+                                                    <img alt="Screenshot of the formatted results from df_bills command."
+                                                        data-linktype="relative-path"
+                                                        src="../media/tutorials/embed-text-documents.png" />
+                                                </a>
+                                            </span>
+                                        </p>
+                                        <p>As we run the search code block below, we'll embed the search query <em>"Can
+                                                I get information on cable company tax revenue?"</em> with the same
+                                            <strong>text-embedding-ada-002 (Version 2)</strong> model. Next we'll find
+                                            the closest bill embedding to the newly embedded text from our query ranked
+                                            by <a data-linktype="relative-path"
+                                                href="../concepts/understand-embeddings">cosine similarity</a>.</p>
+                                        <div class="tabGroup" id="tabgroup_5">
+                                            <ul role="tablist">
+                                                <li role="presentation">
+                                                    <a aria-controls="tabpanel_5_python-new" aria-selected="true"
+                                                        data-linktype="self-bookmark" data-tab="python-new"
+                                                        href="#tabpanel_5_python-new" role="tab" tabindex="0">OpenAI
+                                                        Python 1.x</a>
+                                                </li>
+                                                <li role="presentation">
+                                                    <a aria-controls="tabpanel_5_python" data-linktype="self-bookmark"
+                                                        data-tab="python" href="#tabpanel_5_python" role="tab"
+                                                        tabindex="-1">OpenAI Python 0.28.1</a>
+                                                </li>
+                                            </ul>
+                                            <section data-tab="python-new" id="tabpanel_5_python-new" role="tabpanel">
+                                                <pre><code class="lang-python">def cosine_similarity(a, b):
+    return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
+
+def get_embedding(text, model="text-embedding-ada-002"): # model = "deployment_name"
+    return client.embeddings.create(input = [text], model=model).data[0].embedding
+
+def search_docs(df, user_query, top_n=4, to_print=True):
+    embedding = get_embedding(
+        user_query,
+        model="text-embedding-ada-002" # model should be set to the deployment name you chose when you deployed the text-embedding-ada-002 (Version 2) model
+    )
+    df["similarities"] = df.ada_v2.apply(lambda x: cosine_similarity(x, embedding))
+
+    res = (
+        df.sort_values("similarities", ascending=False)
+        .head(top_n)
+    )
+    if to_print:
+        display(res)
+    return res
+
+
+res = search_docs(df_bills, "Can I get information on cable company tax revenue?", top_n=4)
+</code></pre>
+                                            </section>
+                                            <section aria-hidden="true" data-tab="python" hidden="hidden"
+                                                id="tabpanel_5_python" role="tabpanel">
+                                                <pre><code class="lang-python"># search through the reviews for a specific product
+def search_docs(df, user_query, top_n=3, to_print=True):
+    embedding = get_embedding(
+        user_query,
+        engine="text-embedding-ada-002" # engine should be set to the deployment name you chose when you deployed the text-embedding-ada-002 (Version 2) model
+    )
+    df["similarities"] = df.ada_v2.apply(lambda x: cosine_similarity(x, embedding))
+
+    res = (
+        df.sort_values("similarities", ascending=False)
+        .head(top_n)
+    )
+    if to_print:
+        display(res)
+    return res
+
+
+res = search_docs(df_bills, "Can I get information on cable company tax revenue?", top_n=4)
+</code></pre>
+                                            </section>
+                                        </div>
+                                        <p><strong>Output</strong>:</p>
+                                        <p><span class="mx-imgBorder">
+                                                <a data-linktype="relative-path"
+                                                    href="../media/tutorials/query-result.png#lightbox">
+                                                    <img alt="Screenshot of the formatted results of res once the search query has been run."
+                                                        data-linktype="relative-path"
+                                                        src="../media/tutorials/query-result.png" />
+                                                </a>
+                                            </span>
+                                        </p>
+                                        <p>Finally, we'll show the top result from document search based on user query
+                                            against the entire knowledge base. This returns the top result of the
+                                            "Taxpayer's Right to View Act of 1993". This document has a cosine
+                                            similarity score of 0.76 between the query and the document:</p>
+                                        <pre><code class="lang-python">res["summary"][9]
+</code></pre>
+                                        <pre><code class="lang-output">"Taxpayer's Right to View Act of 1993 - Amends the Communications Act of 1934 to prohibit a cable operator from assessing separate charges for any video programming of a sporting, theatrical, or other entertainment event if that event is performed at a facility constructed, renovated, or maintained with tax revenues or by an organization that receives public financial support. Authorizes the Federal Communications Commission and local franchising authorities to make determinations concerning the applicability of such prohibition. Sets forth conditions under which a facility is considered to have been constructed, maintained, or renovated with tax revenues. Considers events performed by nonprofit or public organizations that receive tax subsidies to be subject to this Act if the event is sponsored by, or includes the participation of a team that is part of, a tax exempt organization."
+</code></pre>
+                                        <h2>Prerequisites<h2>
+                                                <ul>
+                                                    <li>
+                                                        <p>An Azure subscription - <a data-linktype="external"
+                                                                href="https://azure.microsoft.com/free/cognitive-services?azure-portal=true">Create
+                                                                one for free</a></p>
+                                                    </li>
+                                                    <li>
+                                                        <p>An Azure OpenAI resource with the
+                                                            <strong>text-embedding-ada-002 (Version 2)</strong> model
+                                                            deployed.</p>
+                                                        <p>This model is currently only available in <a
+                                                                data-linktype="relative-path"
+                                                                href="../concepts/models#model-summary-table-and-region-availability">certain
+                                                                regions</a>. If you don't have a resource
+                                                            the process of creating one is documented in our <a
+                                                                data-linktype="relative-path"
+                                                                href="../how-to/create-resource">resource deployment
+                                                                guide</a>.</p>
+                                                    </li>
+                                                    <li>
+                                                        <p><a data-linktype="external"
+                                                                href="https://aka.ms/install-powershell">PowerShell
+                                                                7.4</a></p>
+                                                    </li>
+                                                </ul>
+                                                <div class="NOTE">
+                                                    <p>Note</p>
+                                                    <p>Many examples in this tutorial re-use variables from
+                                                        step-to-step. Keep the same terminal session
+                                                        open throughout. If variables you set in a previous step are
+                                                        lost due to closing the terminal,
+                                                        you must begin again from the start.</p>
+                                                </div>
+                                                <h3 id="retrieve-key-and-endpoint">Retrieve key and endpoint</h3>
+                                                <p>To successfully make a call against Azure OpenAI, you need an
+                                                    <strong>endpoint</strong> and a <strong>key</strong>.</p>
+                                                <table>
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Variable name</th>
+                                                            <th>Value</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <tr>
+                                                            <td><code>ENDPOINT</code></td>
+                                                            <td>The service endpoint can be found in the <strong>Keys
+                                                                    &amp; Endpoint</strong> section when examining your
+                                                                resource from the Azure portal. Alternatively, you can
+                                                                find the endpoint via the <strong>Deployments</strong>
+                                                                page in Azure AI Foundry portal. An example endpoint is:
+                                                                <code>https://docs-test-001.openai.azure.com/</code>.
+                                                            </td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td><code>API-KEY</code></td>
+                                                            <td>This value can be found in the <strong>Keys &amp;
+                                                                    Endpoint</strong> section when examining your
+                                                                resource from the Azure portal. You can use either
+                                                                <code>KEY1</code> or <code>KEY2</code>.</td>
+                                                        </tr>
+                                                    </tbody>
+                                                </table>
+                                                <p>Go to your resource in the Azure portal. The <strong>Keys &amp;
+                                                        Endpoint</strong> section can be found in the <strong>Resource
+                                                        Management</strong> section. Copy your endpoint and access key
+                                                    as you'll need both for authenticating your API calls. You can use
+                                                    either <code>KEY1</code> or <code>KEY2</code>. Always having two
+                                                    keys allows you to securely rotate and regenerate keys without
+                                                    causing a service disruption.</p>
+                                                <p><span class="mx-imgBorder">
+                                                        <a data-linktype="relative-path"
+                                                            href="../media/quickstarts/endpoint.png#lightbox">
+                                                            <img alt="Screenshot of the overview UI for an Azure OpenAI resource in the Azure portal with the endpoint and access keys location circled in red."
+                                                                data-linktype="relative-path"
+                                                                src="../media/quickstarts/endpoint.png" />
+                                                        </a>
+                                                    </span>
+                                                </p>
+                                                <h3 id="environment-variables">Environment variables</h3>
+                                                <p>Create and assign persistent environment variables for your key and
+                                                    endpoint.</p>
+                                                <div class="IMPORTANT">
+                                                    <p>Important</p>
+                                                    <p>Use API keys with caution. Don't include the API key directly in
+                                                        your code, and never post it publicly. If you use an API key,
+                                                        store it securely in Azure Key Vault. For more information about
+                                                        using API keys securely in your apps, see <a
+                                                            data-linktype="absolute-path"
+                                                            href="/en-us/azure/key-vault/general/apps-api-keys-secrets">API
+                                                            keys with Azure Key Vault</a>.</p>
+                                                    <p>For more information about AI services security, see <a
+                                                            data-linktype="absolute-path"
+                                                            href="/en-us/azure/ai-services/authentication">Authenticate
+                                                            requests to Azure AI services</a>.</p>
+                                                </div>
+                                                <div class="tabGroup" id="tabgroup_1">
+                                                    <ul role="tablist">
+                                                        <li role="presentation">
+                                                            <a aria-controls="tabpanel_1_command-line"
+                                                                aria-selected="true" data-linktype="self-bookmark"
+                                                                data-tab="command-line" href="#tabpanel_1_command-line"
+                                                                role="tab" tabindex="0">Command Line</a>
+                                                        </li>
+                                                        <li role="presentation">
+                                                            <a aria-controls="tabpanel_1_powershell"
+                                                                data-linktype="self-bookmark" data-tab="powershell"
+                                                                href="#tabpanel_1_powershell" role="tab"
+                                                                tabindex="-1">PowerShell</a>
+                                                        </li>
+                                                        <li role="presentation">
+                                                            <a aria-controls="tabpanel_1_bash"
+                                                                data-linktype="self-bookmark" data-tab="bash"
+                                                                href="#tabpanel_1_bash" role="tab"
+                                                                tabindex="-1">Bash</a>
+                                                        </li>
+                                                    </ul>
+                                                    <section data-tab="command-line" id="tabpanel_1_command-line"
+                                                        role="tabpanel">
+                                                        <pre><code class="lang-CMD">setx AZURE_OPENAI_API_KEY "REPLACE_WITH_YOUR_KEY_VALUE_HERE" 
+</code></pre>
+                                                        <pre><code class="lang-CMD">setx AZURE_OPENAI_ENDPOINT "REPLACE_WITH_YOUR_ENDPOINT_HERE" 
+</code></pre>
+                                                    </section>
+                                                    <section aria-hidden="true" data-tab="powershell" hidden="hidden"
+                                                        id="tabpanel_1_powershell" role="tabpanel">
+                                                        <pre><code class="lang-powershell" data-interactive="powershell">$Env:AZURE_OPENAI_API_KEY = '&lt;YOUR_KEY_VALUE&gt;'
+$Env:AZURE_OPENAI_ENDPOINT = '&lt;YOUR_ENDPOINT&gt;'
+$Env:AZURE_OPENAI_EMBEDDINGS_DEPLOYMENT = '&lt;YOUR_DEPLOYMENT_NAME&gt;'
+</code></pre>
+                                                    </section>
+                                                    <section aria-hidden="true" data-tab="bash" hidden="hidden"
+                                                        id="tabpanel_1_bash" role="tabpanel">
+                                                        <pre><code class="lang-Bash">echo export AZURE_OPENAI_API_KEY="&lt;YOUR_KEY_VALUE&gt;" &gt;&gt; /etc/environment
+echo export AZURE_OPENAI_ENDPOINT="&lt;YOUR_ENDPOINT&gt;" &gt;&gt; /etc/environment
+echo export AZURE_OPENAI_EMBEDDINGS_DEPLOYMENT="&lt;YOUR_DEPLOYMENT_NAME&gt;" &gt;&gt; /etc/environment
+source /etc/environment
+</code></pre>
+                                                    </section>
+                                                </div>
+                                                <p>For this tutorial, we use the <a data-linktype="absolute-path"
+                                                        href="/en-us/powershell/module/?view=powershell-7.4&amp;preserve-view=true">PowerShell
+                                                        7.4 reference documentation</a> as a well-known and safe
+                                                    sample dataset. As an alternative, you might choose to explore the
+                                                    <a data-linktype="external"
+                                                        href="https://www.microsoft.com/research/tools/">Microsoft
+                                                        Research tools</a>
+                                                    sample datasets.</p>
+                                                <p>Create a folder where you would like to store your project. Set your
+                                                    location to the project
+                                                    folder. Download the dataset to your local machine using the
+                                                    <code>Invoke-WebRequest</code> command and then
+                                                    expand the archive. Last, set your location to the subfolder
+                                                    containing reference information for
+                                                    PowerShell version 7.4.</p>
+                                                <pre><code class="lang-powershell" data-interactive="powershell">New-Item '&lt;FILE-PATH-TO-YOUR-PROJECT&gt;' -Type Directory
+Set-Location '&lt;FILE-PATH-TO-YOUR-PROJECT&gt;'
+
+$DocsUri = 'https://github.com/MicrosoftDocs/PowerShell-Docs/archive/refs/heads/main.zip'
+Invoke-WebRequest $DocsUri -OutFile './PSDocs.zip'
+
+Expand-Archive './PSDocs.zip'
+Set-Location './PSDocs/PowerShell-Docs-main/reference/7.4/'
+</code></pre>
+                                                <p>We're working with a large amount of data in this tutorial, so we use
+                                                    a .NET data table object for
+                                                    efficient performance. The datatable has columns
+                                                    <strong>title</strong>, <strong>content</strong>,
+                                                    <strong>prep</strong>, <strong>uri</strong>,
+                                                    <strong>file</strong>, and <strong>vectors</strong>. The
+                                                    <strong>title</strong> column is the <a
+                                                        data-linktype="absolute-path"
+                                                        href="/en-us/dotnet/framework/data/adonet/dataset-datatable-dataview/defining-primary-keys">primary
+                                                        key</a>.
+                                                </p>
+                                                <p>In the next step, we load the content of each markdown file into the
+                                                    data table. We also use
+                                                    PowerShell <code>-match</code> operator to capture known lines of
+                                                    text <code>title:</code> and <code>online version:</code>, and
+                                                    store them in distinct columns. Some of the files don't contain the
+                                                    metadata lines of text, but
+                                                    since they're overview pages and not detailed reference docs, we
+                                                    exclude them from the datatable.</p>
+                                                <pre><code class="lang-powershell" data-interactive="powershell"># make sure your location is the project subfolder
+
+$DataTable = New-Object System.Data.DataTable
+
+'title', 'content', 'prep', 'uri', 'file', 'vectors' | ForEach-Object {
+    $DataTable.Columns.Add($_)
+} | Out-Null
+$DataTable.PrimaryKey = $DataTable.Columns['title']
+
+$md = Get-ChildItem -Path . -Include *.md -Recurse
+
+$md | ForEach-Object {
+    $file       = $_.FullName
+    $content    = Get-Content $file
+    $title      = $content | Where-Object { $_ -match 'title: ' }
+    $uri        = $content | Where-Object { $_ -match 'online version: ' }
+    if ($title -and $uri) {
+        $row                = $DataTable.NewRow()
+        $row.title          = $title.ToString().Replace('title: ', '')
+        $row.content        = $content | Out-String
+        $row.prep           = '' # use later in the tutorial
+        $row.uri            = $uri.ToString().Replace('online version: ', '')
+        $row.file           = $file
+        $row.vectors        = '' # use later in the tutorial
+        $Datatable.rows.add($row)
+    }
+}
+</code></pre>
+                                                <p>View the data using the <code>out-gridview</code> command (not
+                                                    available in Cloud Shell).</p>
+                                                <pre><code class="lang-powershell">$Datatable | out-gridview
+</code></pre>
+                                                <p>Output:</p>
+                                                <p><span class="mx-imgBorder">
+                                                        <a data-linktype="relative-path"
+                                                            href="../media/tutorials/initial-datatable.png#lightbox">
+                                                            <img alt="Screenshot of the initial DataTable results."
+                                                                data-linktype="relative-path"
+                                                                src="../media/tutorials/initial-datatable.png" />
+                                                        </a>
+                                                    </span>
+                                                </p>
+                                                <p>Next perform some light data cleaning by removing extra characters,
+                                                    empty space, and other document
+                                                    notations, to prepare the data for tokenization. The sample function
+                                                    <code>Invoke-DocPrep</code> demonstrates
+                                                    how to use the PowerShell <code>-replace</code> operator to iterate
+                                                    through a list of characters you would like
+                                                    to remove from the content.</p>
+                                                <pre><code class="lang-powershell" data-interactive="powershell"># sample demonstrates how to use `-replace` to remove characters from text content
+function Invoke-DocPrep {
+param(
+    [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+    [string]$content
+)
+    # tab, line breaks, empty space
+    $replace = @('\t','\r\n','\n','\r')
+    # non-UTF8 characters
+    $replace += @('[^\x00-\x7F]')
+    # html
+    $replace += @('&lt;table&gt;','&lt;/table&gt;','&lt;tr&gt;','&lt;/tr&gt;','&lt;td&gt;','&lt;/td&gt;')
+    $replace += @('&lt;ul&gt;','&lt;/ul&gt;','&lt;li&gt;','&lt;/li&gt;')
+    $replace += @('&lt;p&gt;','&lt;/p&gt;','&lt;br&gt;')
+    # docs
+    $replace += @('\*\*IMPORTANT:\*\*','\*\*NOTE:\*\*')
+    $replace += @('&lt;!','no-loc ','text=')
+    $replace += @('&lt;--','--&gt;','---','--',':::')
+    # markdown
+    $replace += @('###','##','#','```')
+    $replace | ForEach-Object {
+        $content = $content -replace $_, ' ' -replace '  ',' '
+    }
+    return $content
+}
+</code></pre>
+                                                <p>After you create the <code>Invoke-DocPrep</code> function, use the
+                                                    <code>ForEach-Object</code> command to store prepared
+                                                    content in the <strong>prep</strong> column, for all rows in the
+                                                    datatable. We're using a new column so the
+                                                    original formatting is available if we would like to retrieve it
+                                                    later.</p>
+                                                <pre><code class="lang-powershell" data-interactive="powershell">$Datatable.rows | ForEach-Object { $_.prep = Invoke-DocPrep $_.content }
+</code></pre>
+                                                <p>View the datatable again to see the change.</p>
+                                                <pre><code class="lang-powershell">$Datatable | out-gridview
+</code></pre>
+                                                <p>When we pass the documents to the embeddings model, it encodes the
+                                                    documents into tokens and then
+                                                    returns a series of floating point numbers to use in a <a
+                                                        data-linktype="relative-path"
+                                                        href="../concepts/understand-embeddings#cosine-similarity">cosine
+                                                        similarity</a> search. These
+                                                    embeddings can be stored locally or in a service such as <a
+                                                        data-linktype="absolute-path"
+                                                        href="/en-us/azure/search/vector-search-overview">Vector Search
+                                                        in Azure AI Search</a>.
+                                                    Each document has its own corresponding embedding vector in the new
+                                                    <strong>vectors</strong> column.</p>
+                                                <p>The next example loops through each row in the datatable, retrieves
+                                                    the vectors for the
+                                                    preprocessed content, and stores them to the
+                                                    <strong>vectors</strong> column. The OpenAI service throttles
+                                                    frequent requests, so the example includes an <strong>exponential
+                                                        back-off</strong> as suggested by the
+                                                    <a data-linktype="external"
+                                                        href="https://platform.openai.com/docs/guides/rate-limits/error-mitigation">documentation</a>.
+                                                </p>
+                                                <p>After the script completes, each row should have a comma-delimited
+                                                    list of 1536 vectors for each
+                                                    document. If an error occurs and the status code is
+                                                    <code>400</code>, the file path, title, and error code
+                                                    are added to a variable named <code>$errorDocs</code> for
+                                                    troubleshooting. The most common error occurs when
+                                                    the token count is more than the prompt limit for the model.</p>
+                                                <pre><code class="lang-powershell" data-interactive="powershell"># Azure OpenAI metadata variables
+$openai = @{
+    api_key     = $Env:AZURE_OPENAI_API_KEY 
+    api_base    = $Env:AZURE_OPENAI_ENDPOINT # should look like 'https://&lt;YOUR_RESOURCE_NAME&gt;.openai.azure.com/'
+    api_version = '2024-02-01' # may change in the future
+    name        = $Env:AZURE_OPENAI_EMBEDDINGS_DEPLOYMENT # custom name you chose for your deployment
+}
+
+$headers = [ordered]@{
+    'api-key' = $openai.api_key
+}
+
+$url = "$($openai.api_base)/openai/deployments/$($openai.name)/embeddings?api-version=$($openai.api_version)"
+
+$Datatable | ForEach-Object {
+    $doc = $_
+
+    $body = [ordered]@{
+        input = $doc.prep
+    } | ConvertTo-Json
+
+    $retryCount = 0
+    $maxRetries = 10
+    $delay      = 1
+    $docErrors = @()
+
+    do {
+        try {
+            $params = @{
+                Uri         = $url
+                Headers     = $headers
+                Body        = $body
+                Method      = 'Post'
+                ContentType = 'application/json'
+            }
+            $response = Invoke-RestMethod @params
+            $Datatable.rows.find($doc.title).vectors = $response.data.embedding -join ','
+            break
+        } catch {
+            if ($_.Exception.Response.StatusCode -eq 429) {
+                $retryCount++
+                [int]$retryAfter = $_.Exception.Response.Headers |
+                    Where-Object key -eq 'Retry-After' |
+                    Select-Object -ExpandProperty Value
+
+                # Use delay from error header
+                if ($delay -lt $retryAfter) { $delay = $retryAfter++ }
+                Start-Sleep -Seconds $delay
+                # Exponential back-off
+                $delay = [math]::min($delay * 1.5, 300)
+            } elseif ($_.Exception.Response.StatusCode -eq 400) {
+                if ($docErrors.file -notcontains $doc.file) {
+                    $docErrors += [ordered]@{
+                        error   = $_.exception.ErrorDetails.Message | ForEach-Object error | ForEach-Object message
+                        file    = $doc.file
+                        title   = $doc.title
+                    }
+                }
+            } else {
+                throw
+            }
+        }
+    } while ($retryCount -lt $maxRetries)
+}
+if (0 -lt $docErrors.count) {
+    Write-Host "$($docErrors.count) documents encountered known errors such as too many tokens.`nReview the `$docErrors variable for details."
+}
+</code></pre>
+                                                <p>You now have a local in-memory database table of PowerShell 7.4
+                                                    reference docs.</p>
+                                                <p>Based on a search string, we need to calculate another set of vectors
+                                                    so PowerShell can rank each
+                                                    document by similarity.</p>
+                                                <p>In the next example, vectors are retrieved for the search string
+                                                    <code>get a list of running processes</code>.</p>
+                                                <pre><code class="lang-powershell" data-interactive="powershell">$searchText = "get a list of running processes"
+
+$body = [ordered]@{
+    input = $searchText
+} | ConvertTo-Json
+
+$url = "$($openai.api_base)/openai/deployments/$($openai.name)/embeddings?api-version=$($openai.api_version)"
+
+$params = @{
+    Uri         = $url
+    Headers     = $headers
+    Body        = $body
+    Method      = 'Post'
+    ContentType = 'application/json'
+}
+$response = Invoke-RestMethod @params
+$searchVectors = $response.data.embedding -join ','
+</code></pre>
+                                                <p>Finally, the next sample function, which borrows an example from the
+                                                    example script
+                                                    <a data-linktype="external"
+                                                        href="https://www.powershellgallery.com/packages/Measure-VectorSimilarity/">Measure-VectorSimilarity</a>
+                                                    written by Lee Holmes, performs a <strong>cosine similarity</strong>
+                                                    calculation
+                                                    and then ranks each row in the datatable.
+                                                </p>
+                                                <pre><code class="lang-powershell" data-interactive="powershell"># Sample function to calculate cosine similarity
+function Get-CosineSimilarity ([float[]]$vector1, [float[]]$vector2) {
+    $dot = 0
+    $mag1 = 0
+    $mag2 = 0
+
+    $allkeys = 0..($vector1.Length-1)
+
+    foreach ($key in $allkeys) {
+        $dot  += $vector1[$key]  * $vector2[$key]
+        $mag1 += ($vector1[$key] * $vector1[$key])
+        $mag2 += ($vector2[$key] * $vector2[$key])
+    }
+
+    $mag1 = [Math]::Sqrt($mag1)
+    $mag2 = [Math]::Sqrt($mag2)
+
+    return [Math]::Round($dot / ($mag1 * $mag2), 3)
+}
+</code></pre>
+                                                <p>The commands in the next example loop through all rows in
+                                                    <code>$Datatable</code> and calculate the cosine
+                                                    similarity to the search string. The results are sorted and the top
+                                                    three results are stored in a
+                                                    variable named <code>$topThree</code>. The example does not return
+                                                    output.</p>
+                                                <pre><code class="lang-powershell" data-interactive="powershell"># Calculate cosine similarity for each row and select the top 3
+$topThree = $Datatable | ForEach-Object {
+    [PSCustomObject]@{
+        title = $_.title
+        similarity = Get-CosineSimilarity $_.vectors.split(',') $searchVectors.split(',')
+    }
+} | Sort-Object -property similarity -descending | Select-Object -First 3 | ForEach-Object {
+    $title = $_.title
+    $Datatable | Where-Object { $_.title -eq $title }
+}
+</code></pre>
+                                                <p>Review the output of the <code>$topThree</code> variable, with only
+                                                    <strong>title</strong> and <strong>url</strong> properties, in
+                                                    gridview.</p>
+                                                <pre><code class="lang-powershell">$topThree | Select "title", "uri" | Out-GridView
+</code></pre>
+                                                <p><strong>Output:</strong></p>
+                                                <p><span class="mx-imgBorder">
+                                                        <a data-linktype="relative-path"
+                                                            href="../media/tutorials/query-result-powershell.png#lightbox">
+                                                            <img alt="Screenshot of the formatted results once the search query finishes."
+                                                                data-linktype="relative-path"
+                                                                src="../media/tutorials/query-result-powershell.png" />
+                                                        </a>
+                                                    </span>
+                                                </p>
+                                                <p>The <code>$topThree</code> variable contains all the information from
+                                                    the rows in the datatable. For example,
+                                                    the <strong>content</strong> property contains the original document
+                                                    format. Use <code>[0]</code> to index into the first item
+                                                    in the array.</p>
+                                                <pre><code class="lang-powershell" data-interactive="powershell">$topThree[0].content
+</code></pre>
+                                                <p>View the full document (truncated in the output snippet for this
+                                                    page).</p>
+                                                <pre><code class="lang-Output">---
+external help file: Microsoft.PowerShell.Commands.Management.dll-Help.xml
+Locale: en-US
+Module Name: Microsoft.PowerShell.Management
+ms.date: 07/03/2023
+online version: https://learn.microsoft.com/powershell/module/microsoft.powershell.management/get-process?view=powershell-7.4&amp;WT.mc_id=ps-gethelp
+schema: 2.0.0
+title: Get-Process
+---
+
+# Get-Process
+
+## SYNOPSIS
+Gets the processes that are running on the local computer.
+
+## SYNTAX
+
+### Name (Default)
+
+Get-Process [[-Name] &lt;String[]&gt;] [-Module] [-FileVersionInfo] [&lt;CommonParameters&gt;]
+# truncated example
+</code></pre>
+                                                <p>Finally, rather than regenerate the embeddings every time you need to
+                                                    query the dataset, you can
+                                                    store the data to disk and recall it in the future. The
+                                                    <code>WriteXML()</code> and <code>ReadXML()</code> methods of
+                                                    <strong>DataTable</strong> object types in the next example simplify
+                                                    the process. The schema of the XML file
+                                                    requires the datatable to have a <strong>TableName</strong>.
+                                                </p>
+                                                <p>Replace <code>&lt;YOUR-FULL-FILE-PATH&gt;</code> with the full path
+                                                    where you would like to write and read the XML
+                                                    file. The path should end with <code>.xml</code>.</p>
+                                                <pre><code class="lang-powershell" data-interactive="powershell"># Set DataTable name
+$Datatable.TableName = "MyDataTable"
+
+# Writing DataTable to XML
+$Datatable.WriteXml("&lt;YOUR-FULL-FILE-PATH&gt;", [System.Data.XmlWriteMode]::WriteSchema)
+
+# Reading XML back to DataTable
+$newDatatable = New-Object System.Data.DataTable
+$newDatatable.ReadXml("&lt;YOUR-FULL-FILE-PATH&gt;")
+</code></pre>
+                                                <p>As you reuse the data, you need to get the vectors of each new search
+                                                    string (but not
+                                                    the entire datatable). As a learning exercise, try creating a
+                                                    PowerShell script to automate the
+                                                    <code>Invoke-RestMethod</code> command with the search string as a
+                                                    parameter.
+                                                </p>
+                                                Reference link definitions
+                                                <h2>Clean up resources<h2>
+                                                        <p>If you created an Azure OpenAI resource solely for completing
+                                                            this tutorial and want to clean up and remove an Azure
+                                                            OpenAI resource, you'll need to delete your deployed models,
+                                                            and then delete the resource or associated resource group if
+                                                            it's dedicated to your test resource. Deleting the resource
+                                                            group also deletes any other resources associated with it.
+                                                        </p>
+                                                        <ul>
+                                                            <li><a data-linktype="relative-path"
+                                                                    href="../../multi-service-resource?pivots=azportal#clean-up-resources">Azure
+                                                                    portal</a></li>
+                                                            <li><a data-linktype="relative-path"
+                                                                    href="../../multi-service-resource?pivots=azcli#clean-up-resources">Azure
+                                                                    CLI</a></li>
+                                                        </ul>
+                                                        <h2>Next steps<h2>
+                                                                <p>Learn more about Azure OpenAI's models:</p>
+                                                                <div class="nextstepaction">
+                                                                    <p><a data-linktype="relative-path"
+                                                                            href="../concepts/models">Azure OpenAI
+                                                                            models</a></p>
+                                                                </div>
+                                                                <ul>
+                                                                    <li>Store your embeddings and perform vector
+                                                                        (similarity) search using your choice of Azure
+                                                                        service:
+                                                                        <ul>
+                                                                            <li><a data-linktype="absolute-path"
+                                                                                    href="/en-us/azure/search/vector-search-overview">Azure
+                                                                                    AI Search</a></li>
+                                                                            <li><a data-linktype="absolute-path"
+                                                                                    href="/en-us/azure/azure-sql/database/ai-artificial-intelligence-intelligent-applications?view=azuresql&amp;preserve-view=true#vector-search">Azure
+                                                                                    SQL Database</a></li>
+                                                                            <li><a data-linktype="absolute-path"
+                                                                                    href="/en-us/azure/cosmos-db/mongodb/vcore/vector-search">Azure
+                                                                                    Cosmos DB for MongoDB vCore</a></li>
+                                                                            <li><a data-linktype="absolute-path"
+                                                                                    href="/en-us/azure/azure-sql/database/ai-artificial-intelligence-intelligent-applications?view=azuresql&amp;preserve-view=true#vector-search">Azure
+                                                                                    SQL Database</a></li>
+                                                                            <li><a data-linktype="absolute-path"
+                                                                                    href="/en-us/azure/cosmos-db/vector-search">Azure
+                                                                                    Cosmos DB for NoSQL</a></li>
+                                                                            <li><a data-linktype="absolute-path"
+                                                                                    href="/en-us/azure/cosmos-db/postgresql/howto-use-pgvector">Azure
+                                                                                    Cosmos DB for PostgreSQL</a></li>
+                                                                            <li><a data-linktype="absolute-path"
+                                                                                    href="/en-us/azure/azure-cache-for-redis/cache-tutorial-vector-similarity">Azure
+                                                                                    Cache for Redis</a></li>
+                                                                        </ul>
+                                                                    </li>
+                                                                </ul>
+                                                                <h2>Feedback<h2>
+                                                                        <div
+                                                                            class="display-flex flex-wrap-wrap align-items-center">
+                                                                            <p
+                                                                                class="font-weight-semibold margin-xxs margin-left-none">
+                                                                                Was this page helpful?
+                                                                            </p>
+                                                                            <div class="buttons">
+                                                                                <button aria-pressed="false"
+                                                                                    class="thumb-rating-button like button button-primary button-sm"
+                                                                                    data-bi-name="button-rating-yes"
+                                                                                    data-binary-rating-response="rating-yes"
+                                                                                    data-test-id="footer-rating-yes"
+                                                                                    title="This article is helpful"
+                                                                                    type="button">
+                                                                                    <span aria-hidden="true"
+                                                                                        class="icon">
+                                                                                        <span
+                                                                                            class="docon docon-like"></span>
+                                                                                    </span>
+                                                                                    <span>Yes</span>
+                                                                                </button>
+                                                                                <button aria-pressed="false"
+                                                                                    class="thumb-rating-button dislike button button-primary button-sm"
+                                                                                    data-bi-name="button-rating-no"
+                                                                                    data-binary-rating-response="rating-no"
+                                                                                    data-test-id="footer-rating-no"
+                                                                                    title="This article is not helpful"
+                                                                                    type="button">
+                                                                                    <span aria-hidden="true"
+                                                                                        class="icon">
+                                                                                        <span
+                                                                                            class="docon docon-dislike"></span>
+                                                                                    </span>
+                                                                                    <span>No</span>
+                                                                                </button>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div
+                                                                            class="display-flex flex-wrap-wrap gap-xxs margin-top-xxs">
+                                                                            <a class="has-external-link-indicator"
+                                                                                data-bi-name="product-feedback"
+                                                                                href="https://feedback.azure.com/d365community/forum/79b1327d-d925-ec11-b6e6-000d3a4f06a4">
+                                                                                <span>Provide product feedback</span>
+                                                                            </a>
+                                                                            <span aria-hidden="true">|</span>
+                                                                            <a class="has-external-link-indicator"
+                                                                                data-bi-name="get-help-at-qna"
+                                                                                href="https://learn.microsoft.com/answers/tags/387/azure-openai">
+                                                                                <span>Get help at Microsoft
+                                                                                    Q&amp;A</span>
+                                                                            </a>
+                                                                        </div>
+                                                                        <h2>Additional resources<h2>
+                                                                                <section class=""
+                                                                                    data-bi-name="recommendations"
+                                                                                    hidden=""
+                                                                                    id="right-rail-recommendations-mobile">
+                                                                                </section>
+                                                                                <section class=""
+                                                                                    data-bi-name="learning-resource-card"
+                                                                                    hidden=""
+                                                                                    id="right-rail-training-mobile">
+                                                                                </section>
+                                                                                <section class=""
+                                                                                    data-bi-name="events-card" hidden=""
+                                                                                    id="right-rail-events-mobile">
+                                                                                </section>
+                                                                                <section class="margin-top-xxs"
+                                                                                    data-bi-name="qna-link-card"
+                                                                                    hidden=""
+                                                                                    id="right-rail-qna-mobile">
+                                                                                </section>
