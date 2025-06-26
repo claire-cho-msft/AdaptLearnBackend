@@ -10,7 +10,5 @@ def hello_world():
 def document(doc):
     return f"{doc}"
 
-
-
 if __name__ == "__main__":
     app.run()
