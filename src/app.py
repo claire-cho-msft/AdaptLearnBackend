@@ -50,14 +50,14 @@ def get_slider_states():
 @app.route("/page/<filename>")
 def serve_static(filename):
     """Serve static files from the templates directory"""
-    with open(f'src/docs/{filename}', 'r', encoding="utf-8") as file:
+    with open(f'src/docs/{filename}.json', 'r', encoding="utf-8") as file:
         info = json.load(file)
     return render_template('page.html', **info)
 
 @app.route("/slider/<filename>")
 def serve_slider(filename):
     """Serve slider data from the templates directory"""
-    with open(f'src/docs/{filename}', 'r', encoding="utf-8") as file:
+    with open(f'src/docs/{filename}.json', 'r', encoding="utf-8") as file:
         info = json.load(file)
     return render_template('index.html', **info)
 
@@ -109,4 +109,4 @@ def tutorial():
 
 
 if __name__ == "__main__":
-    app.run()
+    app.run(debug=True, port=8001)

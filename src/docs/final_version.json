@@ -179,5 +179,16 @@
                 }
             ]
         }
+    ],
+    "in_this_article": [
+        {"title": "Summary", "anchor": "#section--1"},
+        {"title": "Introduction", "anchor": "#section-0"},
+        {"title": "Benefits", "anchor": "#section-2"},
+        {"title": "Configuration and supported scenarios", "anchor": "#section-3"},
+        {"title": "Data path diagram", "anchor": "#section-4"},
+        {"title": "Components", "anchor": "#section-5"},
+        {"title": "Pricing", "anchor": "#section-6"},
+        {"title": "Limitations", "anchor": "#section-7"},
+        {"title": "Next steps", "anchor": "#section-8"}
     ]
 }
