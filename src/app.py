@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, jsonify
 import datetime
 import datetime
+import json
 
 app = Flask(__name__)
 
@@ -46,6 +47,20 @@ def get_slider_states():
     """Get current slider states"""
     return jsonify(slider_states)
 
+@app.route("/page/<filename>")
+def serve_static(filename):
+    """Serve static files from the templates directory"""
+    with open(f'src/docs/{filename}', 'r', encoding="utf-8") as file:
+        info = json.load(file)
+    return render_template('page.html', **info)
+
+@app.route("/slider/<filename>")
+def serve_slider(filename):
+    """Serve slider data from the templates directory"""
+    with open(f'src/docs/{filename}', 'r', encoding="utf-8") as file:
+        info = json.load(file)
+    return render_template('index.html', **info)
+
 @app.route("/tutorial")
 def tutorial():
     # Example data structure - you can modify this based on how you receive the data
@@ -63,7 +78,7 @@ def tutorial():
                 'id': 'section-1',
                 'title': 'Getting Started',
                 'content': [
-                    {'type': 'paragraph', 'text': 'This is the first section of your tutorial. You can include step-by-step instructions here.'},
+                    {'type': 'paragraph', 'text': 'This is the <a href="https://example.com">first step</a> of your tutorial. You can include step-by-step instructions here.'},
                     {'type': 'list', 'elements': [
                         'First step in the process',
                         'Second step with more details',

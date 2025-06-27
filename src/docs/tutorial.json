@@ -1,0 +1,38 @@
+{
+  "title": "Sample Tutorial - Getting Started Guide",
+  "meta": "12/26/2024 • Applies to: Your Platform",
+  "breadcrumbs": [
+    {"name": "Learn", "url": "#"},
+    {"name": "Tutorials", "url": "#"},
+    {"name": "Sample Tutorial - Getting Started Guide", "url": null}
+  ],
+  "intro_paragraph": "This is an introductory paragraph that explains what this tutorial covers. You can customize this content based on your specific needs.",
+  "sections": [
+    {
+      "id": "section-1",
+      "title": "Getting Started",
+      "content": [
+        {"type": "paragraph", "text": "This is the <a href=\"https://example.com\">first step</a> of your tutorial. You can include step-by-step instructions here."},
+        {"type": "list", "elements": [
+          "First step in the process",
+          "Second step with more details",
+          "Third step to complete the setup"
+        ]},
+        {"type": "paragraph", "text": "Additional explanatory text can go here to provide more context."}
+      ]
+    },
+    {
+      "id": "section-2",
+      "title": "Advanced Configuration",
+      "content": [
+        {"type": "paragraph", "text": "This section covers more advanced topics and configurations."},
+        {"type": "note", "text": "This is an important note that users should pay attention to."},
+        {"type": "paragraph", "text": "More detailed instructions and explanations continue here."}
+      ]
+    }
+  ],
+  "in_this_article": [
+    {"title": "Getting Started", "anchor": "#section-1"},
+    {"title": "Advanced Configuration", "anchor": "#section-2"}
+  ]
+}

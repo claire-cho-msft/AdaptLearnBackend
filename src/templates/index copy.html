@@ -726,44 +726,20 @@
             </div>
           </span>
         </div>
-        <div class="section-content" id="section-content-{{ section.id }}">
-          {% if section.content[0].type == 'paragraph' %}
-          <div class="para">{{ section.content[0].text | safe }}</div>
-          {% elif section.content[0].type == 'list' %}
+        <div class="section-content">
+          {% for content_item in section.content %}
+          {% if content_item.type == 'paragraph' %}
+          <div class="para">{{ content_item.text | safe }}</div>
+          {% elif content_item.type == 'list' %}
           <ul>
-            {% for item in section.content[0].elements %}
+            {% for item in content_item.elements %}
             <li>{{ item | safe }}</li>
             {% endfor %}
           </ul>
-          {% elif section.content[0].type == 'note' %}
-          <div class="note-block">{{ section.content[0].text | safe }}</div>
+          {% elif content_item.type == 'note' %}
+          <div class="note-block">{{ content_item.text | safe }}</div>
           {% endif %}
-        </div>
-        <div class="section-content" id="section-content-{{ section.id }}">
-          {% if section.content[1].type == 'paragraph' %}
-          <div class="para">{{ section.content[1].text | safe }}</div>
-          {% elif section.content[1].type == 'list' %}
-          <ul>
-            {% for item in section.content[1].elements %}
-            <li>{{ item | safe }}</li>
-            {% endfor %}
-          </ul>
-          {% elif section.content[1].type == 'note' %}
-          <div class="note-block">{{ section.content[1].text | safe }}</div>
-          {% endif %}
-        </div>
-        <div class="section-content" id="section-content-{{ section.id }}">
-          {% if section.content[2].type == 'paragraph' %}
-          <div class="para">{{ section.content[2].text | safe }}</div>
-          {% elif section.content[2].type == 'list' %}
-          <ul>
-            {% for item in section.content[2].elements %}
-            <li>{{ item | safe }}</li>
-            {% endfor %}
-          </ul>
-          {% elif section.content[2].type == 'note' %}
-          <div class="note-block">{{ section.content[2].text | safe }}</div>
-          {% endif %}
+          {% endfor %}
         </div>
       </section>
       {% endfor %}
@@ -812,13 +788,11 @@
     (function () {
       // Function to initialize a single slider
       function initSlider(sliderId) {
-        const sectionId = sliderId.replace('slider-', '');
         const slider = document.getElementById(sliderId);
         if (!slider) return; // Skip if slider doesn't exist
         
         const thumb = slider.querySelector('.slider-thumb');
         const dots = slider.querySelectorAll('.slider-dot');
-        const sections = document.getElementById(sectionId).querySelectorAll('.section-content');
         let pos = 0; // 0 - left, 1 - middle, 2 - right
 
         // These percentages align the center of the thumb with the center of the dots
@@ -836,11 +810,6 @@
           dots.forEach((dot, i) => {
             dot.classList.toggle('active', i === pos);
           });
-
-          sections.forEach((section, i) => {
-            section.style.display = (i === pos) ? 'block' : 'none';
-          });
-
           slider.setAttribute('aria-valuenow', pos + 1);
 
           // Send slider state to Flask
