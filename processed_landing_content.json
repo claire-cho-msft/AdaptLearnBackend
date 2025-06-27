@@ -1,0 +1,129 @@
+[
+  {
+    "id": "get-started",
+    "title": "Get started",
+    "content": [
+      {
+        "type": "paragraph",
+        "text": "<strong>Get Started Resources:</strong>"
+      },
+      {
+        "type": "list",
+        "elements": [
+          "<a href=\"/markdown/azure-developer-cli/overview.md\">What is Azure Developer CLI (azd)?</a>",
+          "<a href=\"/markdown/azure-developer-cli/install-azd.md\">Install azd</a>",
+          "<a href=\"/markdown/azure-developer-cli/get-started.md\">Deploy an azd template</a>",
+          "<a href=\"/markdown/azure-developer-cli/supported-languages-environments.md\">Supported languages and environments</a>",
+          "<a href=\"/markdown/azure-developer-cli/introduction-to-azure-developer-cli.md\">Training - Introduction to Azure Developer CLI</a>"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "work-with-templates",
+    "title": "Work with templates",
+    "content": [
+      {
+        "type": "paragraph",
+        "text": "<strong>Tutorial Resources:</strong>"
+      },
+      {
+        "type": "list",
+        "elements": [
+          "<a href=\"/markdown/azure-developer-cli/azd-templates.md\">Explore azd templates</a>",
+          "<a href=\"/markdown/azure-developer-cli/awesome-azd.md\">Visit the template gallery</a>",
+          "<a href=\"/markdown/azure-developer-cli/make-azd-compatible.md\">Make your project azd compatiable</a>",
+          "<a href=\"/markdown/azure-developer-cli/azure-developer-cli.md\">Training - Build and deploy azd templates</a>",
+          "<a href=\"/markdown/azure-developer-cli/configure-devops-pipeline.md\">Configure deployment pipeline</a>"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "customization-and-configuration",
+    "title": "Customization and configuration",
+    "content": [
+      {
+        "type": "paragraph",
+        "text": "<strong>Tutorial Resources:</strong>"
+      },
+      {
+        "type": "list",
+        "elements": [
+          "<a href=\"/markdown/azure-developer-cli/manage-environment-variables.md\">Manage environment variables</a>",
+          "<a href=\"/markdown/azure-developer-cli/use-terraform-for-azd.md\">Use terraform with azd</a>",
+          "<a href=\"/markdown/azure-developer-cli/azd-extensibility.md\">Customize workflows using hooks</a>",
+          "<a href=\"/markdown/azure-developer-cli/remote-environments-support.md\">Remote environment support</a>",
+          "<a href=\"/markdown/azure-developer-cli/troubleshoot.md\">Troubleshooting</a>"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "popular-templates",
+    "title": "Popular templates",
+    "content": [
+      {
+        "type": "paragraph",
+        "text": "<strong>Sample Resources:</strong>"
+      },
+      {
+        "type": "list",
+        "elements": [
+          "<a href=\"/markdown/azure-developer-cli/awesome-azd.md\">Visit the template gallery</a>",
+          "<a href=\"/markdown/azure-developer-cli/todo-csharp-cosmos-sql.md\">ToDo C# Azure Cosmos DB</a>",
+          "<a href=\"/markdown/azure-developer-cli/todo-csharp-sql.md\">ToDo C# Azure SQL Database</a>",
+          "<a href=\"/markdown/azure-developer-cli/todo-java-mongo.md\">ToDo Java Mongo</a>",
+          "<a href=\"/markdown/azure-developer-cli/todo-nodejs-mongo.md\">ToDo NodeJs MongoDB</a>",
+          "<a href=\"/markdown/azure-developer-cli/todo-python-mongo.md\">ToDo Python MongoDB</a>"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "video-content",
+    "title": "Video content",
+    "content": [
+      {
+        "type": "paragraph",
+        "text": "<strong>Learn Resources:</strong>"
+      },
+      {
+        "type": "list",
+        "elements": [
+          "<a href=\"/markdown/azure-developer-cli/watch.md\">Introducing the Azure Developer CLI - Azure Friday</a>",
+          "<a href=\"/markdown/azure-developer-cli/watch.md\">Azure Developer CLI - GitHub Universe presentation</a>",
+          "<a href=\"/markdown/azure-developer-cli/watch.md\">Azure Developer CLI YouTube playlist</a>",
+          "<a href=\"/markdown/azure-developer-cli/watch.md\">Community standups</a>"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "get-help-and-provide-feedback",
+    "title": "Get help & provide feedback",
+    "content": [
+      {
+        "type": "paragraph",
+        "text": "<strong>How To Guide Resources:</strong>"
+      },
+      {
+        "type": "list",
+        "elements": [
+          "<a href=\"/markdown/azure-developer-cli/troubleshoot.md\">Troubleshoot & Get help</a>",
+          "<a href=\"/markdown/azure-developer-cli/faq.md\">Frequently asked questions (FAQ)</a>"
+        ]
+      },
+      {
+        "type": "paragraph",
+        "text": "<strong>Reference Resources:</strong>"
+      },
+      {
+        "type": "list",
+        "elements": [
+          "<a href=\"/markdown/azure-developer-cli/reference.md\">Azure Developer CLI Reference</a>"
+        ]
+      }
+    ]
+  }
+]

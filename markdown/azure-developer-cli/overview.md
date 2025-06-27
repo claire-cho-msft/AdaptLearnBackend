@@ -68,8 +68,8 @@ After you install `azd`, provision and deploy app resources to Azure in only a f
 1. Iterate on the application code and deploy changes as needed by running `azd deploy`.
 1. Update Azure resources by modifying the template's Infrastructure as Code (IaC) and then running `azd provision`.
 
-    > [!NOTE]
-    > Alternatively, you can also run `azd up` whenever you make a changes to your app code or infrastructure files, which handles both provisioning and deploying app resources. Visit the [reference page] for a complete list of `azd` commands.
+> [!NOTE]
+> Alternatively, you can also run `azd up` whenever you make a changes to your app code or infrastructure files, which handles both provisioning and deploying app resources. Visit the [reference page] for a complete list of `azd` commands.
 
 ## Introductory video
 
